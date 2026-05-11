@@ -20,7 +20,7 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-DATABASE_URL = os.environ["DATABASE_URL"]
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 PUSH_TOKEN   = os.environ.get("PUSH_TOKEN", "change-me-in-railway-env")
 
 app = FastAPI(title="Seller KAM Advisor — Railway", version="0.1.0")
@@ -37,6 +37,8 @@ app.add_middleware(
 # ─── DB helpers ───────────────────────────────────────────────────────────────
 
 def get_conn():
+    if not DATABASE_URL:
+        raise HTTPException(503, "DATABASE_URL not configured — set it in Railway Variables")
     return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
@@ -71,7 +73,8 @@ def init_db():
 
 @app.on_event("startup")
 def startup():
-    init_db()
+    if DATABASE_URL:
+        init_db()
 
 
 # ─── Models ───────────────────────────────────────────────────────────────────
